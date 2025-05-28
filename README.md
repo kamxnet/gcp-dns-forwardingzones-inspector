@@ -2,41 +2,32 @@
 
 ## Overview
 
-The **Cloud DNS Forwarding Inspector** is a Python-based internal diagnostic tool designed for **GCP support engineers** and **network administrators**. It helps identify how DNS queries are resolved via **private forwarding zones**, especially in **cross-project VPC bindings**, which can often lead to DNS anomalies like `SERVFAIL`, `NXDOMAIN`, or unexpected query routing.
+The **Cloud DNS Forwarding Inspector** is a Python-based diagnostic tool designed to help GCP support engineers and network administrators troubleshoot DNS resolution issues involving **Cloud DNS private forwarding zones**. It detects forwarding zones across projects that are bound to a specific VM's VPC and surfaces any DNS routing behavior that might not be visible from a single project view.
 
 ---
 
 ## Key Features
 
-* Scans **all Cloud DNS private forwarding zones** across multiple projects.
-* Automatically detects if a DNS forwarding zone is **bound to the VM's VPC**.
-* Identifies **source project** (zone origin) and **target project** (zone binding).
-* Detects **cross-project DNS bindings** and **reverse DNS delegation paths**.
-* Flags misconfigurations such as:
+* Detects all Cloud DNS private forwarding zones across projects
+* Identifies:
 
-  * Duplicate DNS names across zones
-  * Multiple forwarding targets
-* Provides a **clear, readable report** summarizing all DNS zones affecting the VM.
-
----
-
-## Architecture
-
-The tool utilizes the `gcloud` CLI to:
-
-1. Retrieve the VPC network associated with a VM.
-2. Enumerate all Cloud DNS forwarding zones in a set of GCP projects.
-3. Check if each zone is bound to the VM's VPC.
-4. Identify source and target projects using parsing logic from DNS zone metadata.
-5. Output a human-readable inspection report.
+  * Source project (where the DNS zone is defined)
+  * Target project (where the VPC is bound)
+  * Target IP addresses for outbound forwarding
+  * Cross-project forwarding relationships
+  * Duplicate DNS names or multiple targets
+* Outputs a clean, readable report for debugging
 
 ---
 
 ## Requirements
 
 * Python 3.6+
-* `gcloud` CLI must be installed and authenticated.
-* The authenticated identity must have `viewer` or `dns.reader` and `compute.viewer` roles in all specified projects.
+* Google Cloud SDK (`gcloud`) must be installed and authenticated
+* Required IAM roles:
+
+  * `roles/dns.reader`
+  * `roles/compute.viewer`
 
 ---
 
@@ -47,68 +38,97 @@ python3 cloud_dns_forwarding_inspector_standalone.py \
   --vm test-vm \
   --project kamsbtest \
   --zone us-central1-a \
-  --extra_projects kamsbtest1 other-project \
+  --extra_projects kamsbtest1 \
   --debug
 ```
 
 ### Arguments
 
-| Argument           | Description                                                     |
-| ------------------ | --------------------------------------------------------------- |
-| `--vm`             | Name of the VM to inspect                                       |
-| `--project`        | GCP project ID where the VM resides                             |
-| `--zone`           | GCP zone of the VM                                              |
-| `--extra_projects` | Optional list of other projects to inspect for forwarding zones |
-| `--debug`          | Optional flag to print full stack trace on error                |
+| Argument           | Description                                                 |
+| ------------------ | ----------------------------------------------------------- |
+| `--vm`             | VM instance name to inspect                                 |
+| `--project`        | Project ID where the VM is located                          |
+| `--zone`           | Zone of the VM                                              |
+| `--extra_projects` | List of additional projects to inspect for forwarding zones |
+| `--debug`          | Print detailed error traceback if an exception is raised    |
 
 ---
 
-## Example Output
+## Sample Output
 
-```text
+```txt
 ================ DNS Forwarding Inspection Report ================
 VM: test-vm
 Project: kamsbtest
 VPC: default
 
-Forwarding Zone: reverse-fwd-zone (Cross-project)
-   DNS Name: devops.internal.
-   Source Project: kamsbtest
-   Target Project: kamsbtest1
-   Cross Binding: kamsbtest → kamsbtest1
+Forwarding Zone: cross-fwd-zone (Cross-project)
+   DNS Name: factory.internal.
+   Source Project: kamsbtest1
+   Target Project: kamsbtest
+   Cross Binding: kamsbtest1 → kamsbtest
    VPC Bindings: default
-   Target IPs: 1.1.1.1
+   Target IPs: 192.168.100.10
 ...
 Total forwarding zones scanned: 5
 ```
-```
+
+---
 
 ## Project Structure
 
-/ (root)
-├── cloud_dns_forwarding_inspector_standalone.py    # Main Python script
-├── README.md              # Documentation for the project
-├── LICENSE                # Open source license (MIT)
-├── sample_output.txt      # Example output file from Cloud Shell
-├── Screenshots.zip        # Project Overview from GCP Console
-
+```bash
+/root
+├── cloud_dns_forwarding_inspector_standalone.py   # Main Python script
+├── README.md                                       # Documentation for the project
+├── LICENSE                                         # Open source License (MIT)
+├── sample_output.txt                               # Example output file from Cloud Shell
+├── Screenshots.zip                                 # Screenshot archive (or individual .png files below)
+├── screenshots/                                    # Optional extracted directory
+│   ├── kamsbtest_zones.png
+│   ├── cross_fwd_zone_summary.png
+│   ├── cross_fwd_zone_outbound.png
+│   ├── cross_fwd_zone_inuseby.png
+│   ├── reverse_fwd_zone_outbound.png
+│   ├── reverse_fwd_zone_inuseby.png
 ```
+
 ---
 
 ## Screenshots
 
-- Refer to the screenshot directory for overview of different DNS forwarding zones in the sampele project. 
+### Zones in `kamsbtest`
+
+![kamsbtest\_zones](screenshots/kamsbtest_zones.png)
+
+### `cross-fwd-zone` in `kamsbtest1` → bound to `kamsbtest`
+
+![cross\_fwd\_zone\_summary](screenshots/cross_fwd_zone_summary.png)
+![cross\_fwd\_zone\_outbound](screenshots/cross_fwd_zone_outbound.png)
+![cross\_fwd\_zone\_inuseby](screenshots/cross_fwd_zone_inuseby.png)
+
+### `reverse-fwd-zone` in `kamsbtest` → bound to `kamsbtest1`
+
+![reverse\_fwd\_zone\_outbound](screenshots/reverse_fwd_zone_outbound.png)
+![reverse\_fwd\_zone\_inuseby](screenshots/reverse_fwd_zone_inuseby.png)
 
 ---
 
 ## Benefits
 
-* **Saves hours of manual investigation** in DNS escalation cases.
-* Provides **visibility into cross-project forwarding** which is not evident from within a single project.
-* Accelerates **root cause analysis** during `dnsPolicy` misconfigurations.
-* Ideal for debugging **metadata DNS** anomalies in GKE or Compute Engine.
+* Saves hours of debugging when DNS queries return `SERVFAIL` or `NXDOMAIN`
+* Detects forwarding zones outside of the current project scope
+* Clarifies DNS resolution behavior at the network level
+* Reduces engineering escalations and back-and-forth with customers
 
+---
 
-## Owner
+## Author
 
-Kamal Bawa [ksbnetworks@gmail.com](mailto:ksbnetworks@gmail.com.com)
+Kamal Bawa — [ksbnetworks@gmail.com](mailto:ksbnetworks@gmail.com)
+
+---
+
+## Reference
+
+* [Google Cloud DNS Zone Binding Docs](https://cloud.google.com/dns/docs/zones/zones-overview#cross-project_binding)
