@@ -81,7 +81,15 @@ Forwarding Zone: reverse-fwd-zone (Cross-project)
 ...
 Total forwarding zones scanned: 5
 ```
+```
+/ (root)
+├── cloud_dns_forwarding_inspector_standalone.py    # Main Python script
+├── README.md              # Documentation for the project
+├── LICENSE                # Open source license (MIT)
+├── sample_output.txt      # Example output file from Cloud Shell
+├── Screenshots.zip        # Project Overview from GCP Console
 
+```
 ---
 
 ## Screenshots
