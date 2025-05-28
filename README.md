@@ -95,25 +95,6 @@ Total forwarding zones scanned: 5
 
 ---
 
-## Screenshots
-
-### Zones in `kamsbtest`
-
-![kamsbtest\_zones](screenshots/kamsbtest_zones.png)
-
-### `cross-fwd-zone` in `kamsbtest1` → bound to `kamsbtest`
-
-![cross\_fwd\_zone\_summary](screenshots/cross_fwd_zone_summary.png)
-![cross\_fwd\_zone\_outbound](screenshots/cross_fwd_zone_outbound.png)
-![cross\_fwd\_zone\_inuseby](screenshots/cross_fwd_zone_inuseby.png)
-
-### `reverse-fwd-zone` in `kamsbtest` → bound to `kamsbtest1`
-
-![reverse\_fwd\_zone\_outbound](screenshots/reverse_fwd_zone_outbound.png)
-![reverse\_fwd\_zone\_inuseby](screenshots/reverse_fwd_zone_inuseby.png)
-
----
-
 ## Benefits
 
 * Saves hours of debugging when DNS queries return `SERVFAIL` or `NXDOMAIN`
